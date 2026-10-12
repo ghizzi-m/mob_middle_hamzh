@@ -2,7 +2,6 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <!-- منع التكبير العشوائي في الجوالات لضمان ثبات اللعبة -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>لعبة أبطال الهمزة المتوسطة</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
@@ -20,7 +19,7 @@
         * {
             box-sizing: border-box;
             font-family: 'Cairo', sans-serif;
-            -webkit-tap-highlight-color: transparent; /* إزالة الوميض عند النقر بالجوال */
+            -webkit-tap-highlight-color: transparent; 
         }
 
         body {
@@ -34,7 +33,7 @@
             align-items: center;
             height: 100vh;
             color: var(--text-dark);
-            overflow: hidden; /* لمنع التمرير الخارجي تماماً لضمان احتواء الشاشة */
+            overflow: hidden; 
         }
 
         /* ================= أزرار التحكم العلوية ================= */
@@ -66,8 +65,9 @@
         .btn-exit { background-color: var(--danger); right: 10px; left: auto; position: fixed; top: 10px; }
         .btn-exit:hover { background-color: #D32F2F; transform: scale(1.1); }
 
-        .btn-fullscreen { background-color: var(--secondary); }
-        .btn-fullscreen:hover { background-color: #0288D1; transform: scale(1.1); }
+        /* تعديل زر ملء الشاشة ليصبح أكثر وضوحاً */
+        .btn-fullscreen { background-color: var(--secondary); width: auto; border-radius: 20px; padding: 0 15px; font-size: 15px; gap: 5px; }
+        .btn-fullscreen:hover { background-color: #0288D1; transform: scale(1.05); }
 
         /* ================= الشاشة الأولى ================= */
         #screen1 {
@@ -393,13 +393,27 @@
         @keyframes bounceIn { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); } }
 
         /* ================= التوافق مع الجوالات والآيباد (استجابة) ================= */
+        @media (max-height: 800px) {
+            .analyzed-word { font-size: 28px; padding: 8px; }
+            .drop-zone { min-height: 60px; font-size: 30px; margin-bottom: 8px; padding: 5px; }
+            .game-content { padding: 5px 10px; }
+            .letter-box { padding: 5px; gap: 4px; }
+            .draggable-letter { font-size: 20px; padding: 2px 6px; }
+            h2 { font-size: 22px; margin-bottom: 8px; }
+            .radio-group { margin-bottom: 8px; }
+            textarea { font-size: 20px; padding: 8px;}
+            .btn-teacher, .btn-student { padding: 10px; font-size: 18px; margin-top: 5px; }
+            .game-header { padding: 8px 15px; font-size: 16px; }
+            .score-badge, .progress-badge { font-size: 16px; padding: 2px 10px; }
+            .btn-read { width: 40px; height: 40px; font-size: 20px; }
+        }
+
         @media (max-width: 900px) {
             body { padding: 5px; }
             #screen1 { flex-direction: column; overflow-y: auto; justify-content: flex-start; height: 98vh; }
             .teacher-side { border-left: none; border-bottom: 4px dashed #FFF59D; padding: 15px; flex: none; }
             .student-side { padding: 15px; flex: none; min-height: 50vh; }
             
-            /* تعديل الشاشة 2 للجوالات لضمان احتوائها بالكامل */
             #screen2 { height: 98vh; }
             .game-header { flex-wrap: wrap; justify-content: center; gap: 8px; padding: 8px; font-size: 14px; }
             #student-info-display { width: 100%; text-align: center; font-size: 12px; }
@@ -419,14 +433,16 @@
             .game-controls .btn-clear, .game-controls .btn-done { padding: 8px 15px; font-size: 14px; }
             .result-msg { font-size: 16px; margin-top: 5px; }
 
-            /* الشاشة 3 للجوال */
             #screen3 { height: 98vh; }
             .congratulations-title { font-size: 32px; }
             .congratulations-text { font-size: 18px; }
             .final-score { font-size: 36px; padding: 10px 20px; }
+            
+            .top-controls { top: 5px; left: 5px; }
+            .btn-exit { top: 5px; right: 5px; }
+            .btn-control { width: 35px; height: 35px; font-size: 16px; }
         }
         
-        /* للهواتف الصغيرة جداً عرضاً */
         @media (max-width: 400px) {
             .radio-group { grid-template-columns: repeat(2, 1fr); }
             h2 { font-size: 20px; }
@@ -438,7 +454,7 @@
 
     <!-- أزرار التحكم العلوية -->
     <div class="top-controls">
-        <button class="btn-control btn-fullscreen" onclick="toggleFullScreen()" title="تكبير الشاشة">🔲</button>
+        <button class="btn-control btn-fullscreen" onclick="toggleFullScreen()" title="تكبير الشاشة">⤢ تكبير الشاشة</button>
     </div>
     <button class="btn-control btn-exit" onclick="location.reload()" title="خروج">✖</button>
 
@@ -617,7 +633,7 @@
                 window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'ar-SA';
-                utterance.rate = 1.1; // استخدام الكود السابق
+                utterance.rate = 1.1; 
                 window.speechSynthesis.speak(utterance);
             }
         }
