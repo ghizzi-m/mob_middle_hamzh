@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <!-- منع التكبير العشوائي في الجوالات لضمان ثبات اللعبة -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>لعبة أبطال الهمزة المتوسطة</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF9800; 
+            --secondary: #03A9F4; 
+            --success: #4CAF50; 
+            --danger: #F44336; 
+            --background: #E1F5FE; 
+            --card-bg: #FFFFFF;
+            --text-dark: #333333;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Cairo', sans-serif;
+            -webkit-tap-highlight-color: transparent; /* إزالة الوميض عند النقر بالجوال */
+        }
+
+        body {
+            background-color: var(--background);
+            background-image: radial-gradient(#B3E5FC 2px, transparent 2px);
+            background-size: 30px 30px;
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: var(--text-dark);
+            overflow: hidden; /* لمنع التمرير الخارجي تماماً لضمان احتواء الشاشة */
+        }
+
+        /* ================= أزرار التحكم العلوية ================= */
+        .top-controls {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            gap: 10px;
+            z-index: 9999;
+        }
+
+        .btn-control {
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .btn-exit { background-color: var(--danger); right: 10px; left: auto; position: fixed; top: 10px; }
+        .btn-exit:hover { background-color: #D32F2F; transform: scale(1.1); }
+
+        .btn-fullscreen { background-color: var(--secondary); }
+        .btn-fullscreen:hover { background-color: #0288D1; transform: scale(1.1); }
+
+        /* ================= الشاشة الأولى ================= */
+        #screen1 {
+            display: flex;
+            flex-direction: row;
+            width: 100%;
+            max-width: 1100px;
+            height: 95vh;
+            background: var(--card-bg);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            border: 5px solid #FFFFFF;
+            margin: auto;
+            overflow: hidden;
+        }
+
+        .teacher-side {
+            flex: 1;
+            background-color: #FFFDE7;
+            padding: 15px 25px;
+            border-left: 4px dashed #FFF59D;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow-y: auto;
+        }
+
+        .student-side {
+            flex: 1;
+            background-color: #E8F5E9;
+            padding: 15px 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+        }
+
+        h2 { text-align: center; margin-bottom: 10px; font-size: 24px; font-weight: 900; }
+        .teacher-side h2 { color: #F57F17; }
+        .student-side h2 { color: #2E7D32; }
+
+        .instructions {
+            background-color: #FFF9C4;
+            color: #F57F17;
+            padding: 8px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-align: center;
+            border: 2px solid #FFF59D;
+        }
+
+        /* ================= خيارات اختيار الكلمات ================= */
+        .radio-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .radio-label {
+            background: #FFFFFF;
+            border: 2px solid #FFF59D;
+            border-radius: 8px;
+            padding: 6px;
+            text-align: center;
+            font-size: 13px;
+            font-weight: bold;
+            color: #F57F17;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .radio-label:hover { background: #FFF9C4; }
+        .radio-label.active { background: var(--primary); color: white; border-color: #F57C00; box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); }
+
+        .gen-container { display: none; gap: 10px; margin-bottom: 10px; }
+        .gen-input { flex: 1; padding: 6px 10px; border: 2px solid #E0E0E0; border-radius: 10px; font-size: 15px; outline: none; font-family: 'Cairo', sans-serif; text-align: center; }
+        .gen-input:focus { border-color: var(--primary); }
+        .gen-btn { background: linear-gradient(to bottom, #4CAF50, #2E7D32); padding: 6px 15px; border: none; border-radius: 10px; color: white; font-weight: bold; font-size: 15px; cursor: pointer; box-shadow: 0 4px 0 #1B5E20; }
+        .gen-btn:active { transform: translateY(4px); box-shadow: none; }
+
+        /* ================= المدخلات والأزرار ================= */
+        textarea {
+            width: 100%;
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border: 3px solid #E0E0E0;
+            border-radius: 12px;
+            font-size: 20px; 
+            font-weight: 900;
+            line-height: 1.4;
+            outline: none;
+            transition: all 0.3s;
+            resize: vertical;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 3px solid #E0E0E0;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        textarea:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(255, 152, 0, 0.3); }
+        input[type="text"]:focus { border-color: var(--success); box-shadow: 0 0 10px rgba(76, 175, 80, 0.3); }
+
+        input::placeholder, textarea::placeholder { color: #BDBDBD; font-weight: 400; font-size: 15px; }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            font-weight: 900;
+            color: white;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        button:active { transform: translateY(4px); box-shadow: 0 0px 0 rgba(0,0,0,0.2) !important; }
+        button:hover { filter: brightness(1.1); }
+        button:disabled { background: #BDBDBD !important; box-shadow: 0 4px 0 #9E9E9E !important; cursor: not-allowed; transform: none !important; filter: none !important; }
+
+        .btn-teacher { background: linear-gradient(to bottom, #FFB74D, var(--primary)); box-shadow: 0 4px 0 #F57C00; width: 100%; }
+        .btn-student { background: linear-gradient(to bottom, #81C784, var(--success)); box-shadow: 0 4px 0 #388E3C; width: 85%; padding: 12px; font-size: 20px; margin-top: 10px; }
+
+        .confirmation-buttons { display: flex; justify-content: center; gap: 10px; margin-top: 10px; }
+        .btn-yes { background: linear-gradient(to bottom, #81C784, var(--success)); box-shadow: 0 4px 0 #388E3C; min-width: 100px; font-size: 16px;}
+        .btn-no { background: linear-gradient(to bottom, #E57373, var(--danger)); box-shadow: 0 4px 0 #D32F2F; min-width: 100px; font-size: 16px;}
+
+        #teacher-confirmation { display: none; text-align: center; margin-top: 10px; background: #E0F2F1; padding: 10px; border-radius: 10px; border: 2px solid #80CBC4; animation: fadeIn 0.4s ease-in-out; }
+        #teacher-msg { font-weight: 900; margin-top: 5px; text-align: center; font-size: 14px; }
+        #student-error { color: var(--danger); font-size: 14px; text-align: center; margin-top: 10px; font-weight: bold; }
+
+        /* ================= الشاشة الثانية (اللعبة) ================= */
+        #screen2 {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            max-width: 1100px;
+            height: 95vh;
+            background: var(--card-bg);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            border-radius: 20px;
+            border: 5px solid var(--secondary);
+            margin: auto;
+            overflow: hidden;
+        }
+
+        .game-header {
+            background-color: var(--secondary);
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
+            font-weight: 900;
+            border-bottom: 4px solid #0288D1;
+        }
+
+        .score-badge { background: #FFEB3B; color: #E65100; padding: 2px 15px; border-radius: 15px; box-shadow: 0 3px 0 #FBC02D; font-size: 20px; }
+        .progress-badge { background: rgba(255, 255, 255, 0.2); padding: 4px 15px; border-radius: 15px; border: 2px dashed rgba(255, 255, 255, 0.5); font-size: 18px; }
+
+        .game-content { 
+            flex: 1;
+            padding: 10px 20px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+        }
+
+        .btn-read {
+            background: linear-gradient(to bottom, #29B6F6, #0288D1);
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #0277BD;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s;
+            padding: 0;
+        }
+        .btn-read:active { transform: translateY(4px); box-shadow: none !important; }
+        .btn-read:hover { filter: brightness(1.1); }
+
+        .analyzed-word {
+            font-size: 35px; 
+            font-weight: 900;
+            color: #E65100;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            background-color: #FFF3E0;
+            padding: 10px 15px;
+            border-radius: 15px;
+            border: 3px dashed #FFB74D;
+            margin-bottom: 0;
+        }
+
+        .analyzed-word span { background: #ffffff; padding: 0 8px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+        .letters-grid {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap; 
+        }
+
+        .letter-box {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 5px;
+            background: #F5F5F5;
+            padding: 8px;
+            border-radius: 12px;
+            border: 2px solid #E0E0E0;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .draggable-letter {
+            font-size: 22px; 
+            background-color: #FFFFFF;
+            border: 2px solid var(--secondary);
+            padding: 2px 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 900;
+            color: #01579B;
+            user-select: none;
+            transition: all 0.2s;
+            box-shadow: 0 3px 0 var(--secondary);
+        }
+        
+        .draggable-letter:active { transform: translateY(3px); box-shadow: none; }
+        .draggable-letter.selected { background-color: #FFEB3B !important; border-color: #F57F17 !important; box-shadow: 0 3px 0 #F57F17 !important; color: #E65100 !important; transform: scale(1.1); }
+
+        .instruction-text { color: #607D8B; margin-bottom: 10px; font-size: 16px; font-weight: 800; text-align: center; }
+
+        .drop-zone {
+            width: 100%;
+            max-width: 600px;
+            min-height: 75px;
+            margin: 0 auto 10px auto;
+            border: 4px dashed var(--secondary);
+            border-radius: 15px;
+            background-color: #E1F5FE;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+            font-size: 35px;
+            font-weight: 900;
+            color: #004D40;
+            line-height: 1.2;
+            cursor: pointer;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
+        }
+        
+        .drop-zone:hover { background-color: #B3E5FC; }
+        .drop-zone span { pointer-events: auto; cursor: pointer; transition: color 0.2s; }
+        .drop-zone span:hover { color: var(--danger); }
+
+        .game-controls { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .game-controls .btn-clear { background: linear-gradient(to bottom, #E57373, var(--danger)); box-shadow: 0 4px 0 #D32F2F; font-size: 16px; padding: 10px 20px;}
+        .game-controls .btn-done { background: linear-gradient(to bottom, #81C784, var(--success)); box-shadow: 0 4px 0 #388E3C; padding: 10px 40px; font-size: 16px;}
+
+        .result-msg { margin-top: 10px; font-size: 20px; font-weight: 900; height: 30px; }
+
+        /* ================= الشاشة الثالثة (التهنئة) ================= */
+        #screen3 {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            max-width: 900px;
+            height: 95vh;
+            background: var(--card-bg);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            border-radius: 25px;
+            border: 6px solid #FFEB3B;
+            margin: auto;
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: bounceIn 0.8s ease;
+        }
+
+        .congratulations-title { font-size: 40px; color: #E65100; font-weight: 900; margin-bottom: 15px; text-align: center; }
+        .congratulations-text { font-size: 24px; color: #2E7D32; font-weight: 700; margin-bottom: 25px; line-height: 1.6; text-align: center; }
+        .final-score { font-size: 45px; color: var(--secondary); font-weight: 900; background: #E1F5FE; padding: 10px 35px; border-radius: 20px; display: inline-block; border: 4px dashed var(--secondary); margin-bottom: 25px; }
+
+        .btn-play-again { background: linear-gradient(to bottom, #9C27B0, #7B1FA2); box-shadow: 0 5px 0 #4A148C; padding: 12px 35px; font-size: 22px; color: white; }
+        .btn-play-again:hover { filter: brightness(1.15); }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes bounceIn { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.05); opacity: 1; } 100% { transform: scale(1); } }
+
+        /* ================= التوافق مع الجوالات والآيباد (استجابة) ================= */
+        @media (max-width: 900px) {
+            body { padding: 5px; }
+            #screen1 { flex-direction: column; overflow-y: auto; justify-content: flex-start; height: 98vh; }
+            .teacher-side { border-left: none; border-bottom: 4px dashed #FFF59D; padding: 15px; flex: none; }
+            .student-side { padding: 15px; flex: none; min-height: 50vh; }
+            
+            /* تعديل الشاشة 2 للجوالات لضمان احتوائها بالكامل */
+            #screen2 { height: 98vh; }
+            .game-header { flex-wrap: wrap; justify-content: center; gap: 8px; padding: 8px; font-size: 14px; }
+            #student-info-display { width: 100%; text-align: center; font-size: 12px; }
+            .score-badge, .progress-badge { font-size: 14px; padding: 2px 10px; }
+            
+            .game-content { padding: 5px; justify-content: space-evenly; }
+            .btn-read { width: 35px; height: 35px; font-size: 18px; }
+            .analyzed-word { font-size: 22px; padding: 8px; gap: 5px; margin-bottom: 5px; }
+            .analyzed-word span { padding: 0 5px; border-radius: 6px; }
+            
+            .letter-box { padding: 5px; gap: 4px; }
+            .draggable-letter { font-size: 18px; padding: 2px 6px; }
+            
+            .drop-zone { font-size: 26px; min-height: 60px; padding: 5px; margin-bottom: 5px; }
+            
+            .instruction-text { font-size: 13px; margin-bottom: 5px; }
+            .game-controls .btn-clear, .game-controls .btn-done { padding: 8px 15px; font-size: 14px; }
+            .result-msg { font-size: 16px; margin-top: 5px; }
+
+            /* الشاشة 3 للجوال */
+            #screen3 { height: 98vh; }
+            .congratulations-title { font-size: 32px; }
+            .congratulations-text { font-size: 18px; }
+            .final-score { font-size: 36px; padding: 10px 20px; }
+        }
+        
+        /* للهواتف الصغيرة جداً عرضاً */
+        @media (max-width: 400px) {
+            .radio-group { grid-template-columns: repeat(2, 1fr); }
+            h2 { font-size: 20px; }
+            textarea { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- أزرار التحكم العلوية -->
+    <div class="top-controls">
+        <button class="btn-control btn-fullscreen" onclick="toggleFullScreen()" title="تكبير الشاشة">🔲</button>
+    </div>
+    <button class="btn-control btn-exit" onclick="location.reload()" title="خروج">✖</button>
+
+    <div id="screen1">
+        <div class="teacher-side">
+            <h2>إعدادات المعلم 👨‍🏫</h2>
+            <div class="instructions">
+                اختر نوع الهمزات المطلوب، أو قم بإدخالها يدوياً.<br>
+                (الحد الأدنى: 3 كلمات | الحد الأقصى: 50 كلمة)
+            </div>
+            
+            <!-- أزرار اختيار نوع الكلمات -->
+            <input type="hidden" id="selected-method" value="manual">
+            <div class="radio-group">
+                <div class="radio-label" onclick="selectMethod('alef', this)">همزة على ألف</div>
+                <div class="radio-label" onclick="selectMethod('waw', this)">همزة على واو</div>
+                <div class="radio-label" onclick="selectMethod('yaa', this)">همزة على ياء</div>
+                <div class="radio-label" onclick="selectMethod('line', this)">همزة على السطر</div>
+                <div class="radio-label" onclick="selectMethod('mixed', this)">همزات منوعة</div>
+                <div class="radio-label active" onclick="selectMethod('manual', this)">كتابة يدوية</div>
+            </div>
+
+            <!-- حاوية إدخال عدد الكلمات والتوليد -->
+            <div class="gen-container" id="auto-gen-container">
+                <input type="number" id="word-count" class="gen-input" min="3" max="50" placeholder="العدد (3 - 50)">
+                <button type="button" class="gen-btn" onclick="generateWords()">توليد</button>
+            </div>
+            
+            <div id="teacher-input-area">
+                <textarea id="teacher-words" rows="1" placeholder="مثال: فأس بئر سؤال مسألة عباءة"></textarea>
+                <button class="btn-teacher" onclick="processTeacherWords()">تـم الإدخال ✔️</button>
+            </div>
+            
+            <div id="teacher-confirmation">
+                <p style="font-size: 14px; margin-bottom: 5px; color: #00695C; font-weight: bold;">
+                    تم وضع الحركات كاملة على جميع الكلمات.<br>هل الحركات كتبت بشكل صحيح؟
+                </p>
+                <div class="confirmation-buttons">
+                    <button class="btn-yes" onclick="confirmWords(true)">نعم 👍</button>
+                    <button class="btn-no" onclick="confirmWords(false)">لا 👎</button>
+                </div>
+            </div>
+            <div id="teacher-msg"></div>
+        </div>
+
+        <div class="student-side">
+            <h2>أهلاً بك يا بطل 🏆</h2>
+            <input type="text" id="student-name" placeholder="اكتب اسمك الثلاثي" style="font-weight: 400; text-align: center;">
+            <input type="text" id="student-class" placeholder="الصف" style="text-align: center;">
+            <button class="btn-student" onclick="startGame()">بدء اللعبة 🚀</button>
+            <div id="student-error"></div>
+            
+            <!-- إضافة حقوق التصميم -->
+            <div style="margin-top: 15px; font-size: 14px; color: #2E7D32; font-weight: 900; background: #C8E6C9; padding: 8px 15px; border-radius: 10px; border: 2px dashed #81C784;">
+                فكرة وتصميم : أ غزي بن مساعد الغزي
+            </div>
+        </div>
+    </div>
+
+    <div id="screen2">
+        <div class="game-header">
+            <div>النقاط: <span class="score-badge" id="score-display">0</span></div>
+            <div class="progress-badge">الكلمة: <span id="current-word-num">1</span> / <span id="total-words-num">0</span></div>
+            <div id="student-info-display">الاسم: | الصف: </div>
+        </div>
+
+        <div class="game-content">
+            <!-- حاوية الكلمة وزر النطق -->
+            <div style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 10px; flex-wrap: wrap; width: 100%;">
+                <button onclick="readCurrentWord()" class="btn-read" title="استمع للكلمة">🔊</button>
+                <div class="analyzed-word" id="analyzed-word"></div>
+            </div>
+            
+            <div class="letters-grid" id="letters-boxes"></div>
+            <div class="instruction-text">🎯 اسحب الحرف أو انقر عليه، ويمكنك النقر على الحرف في المربع أدناه لحذفه:</div>
+            
+            <div class="drop-zone" id="drop-zone" 
+                 ondrop="drop(event)" 
+                 ondragover="allowDrop(event)"
+                 onclick="placeLetterInZone()"></div>
+
+            <div class="game-controls">
+                <button class="btn-clear" onclick="clearDropZone()">إفراغ المربع للإعادة 🧹</button>
+                <button class="btn-done" id="btn-submit-answer" onclick="checkAnswer()">تــم ✔️</button>
+            </div>
+            <div id="game-result-msg" class="result-msg"></div>
+        </div>
+    </div>
+
+    <div id="screen3">
+        <div class="congratulations-title">🎉 أسطورة الهمزات! 🎉</div>
+        <div class="congratulations-text" id="final-message"></div>
+        <div class="final-score">النقاط: <span id="final-score-display">0</span></div>
+        <div>
+            <button class="btn-play-again" onclick="location.reload()">العب مرة أخرى 🔄</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // Fullscreen Toggle
+        // ==========================================
+        function toggleFullScreen() {
+            if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                let docElm = document.documentElement;
+                if (docElm.requestFullscreen) { docElm.requestFullscreen(); } 
+                else if (docElm.webkitRequestFullScreen) { docElm.webkitRequestFullScreen(); }
+            } else {
+                if (document.exitFullscreen) { document.exitFullscreen(); } 
+                else if (document.webkitExitFullscreen) { document.webkitExitFullscreen(); }
+            }
+        }
+
+        // ==========================================
+        // AudioContext System (المؤثرات الصوتية)
+        // ==========================================
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+            
+            if (type === 'correct') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.5, now + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.5, now + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            } else if (type === 'suspense') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.linearRampToValueAtTime(0, now + 2);
+                osc.start(now);
+                osc.stop(now + 2);
+            } else if (type === 'lock') {
+                 osc.type = 'square';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.setValueAtTime(1200, now + 0.1);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.3, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+        }
+
+        // ==========================================
+        // دالة التحدث الصوتي المحسنة
+        // ==========================================
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.onvoiceschanged = function() {
+                window.speechSynthesis.getVoices();
+            };
+        }
+
+        function speakText(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ar-SA';
+                utterance.rate = 1.1; // استخدام الكود السابق
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function readCurrentWord() {
+            if (gameWords && gameWords[currentWordIndex]) {
+                speakText(gameWords[currentWordIndex]);
+            }
+        }
+
+        // ==========================================
+        // قاعدة البيانات الكبيرة لكلمات الهمزة المتوسطة
+        // ==========================================
+        const wordsAlef = ["سَأَلَ", "يَسْأَلُ", "مَسْأَلَةٌ", "رَأْسٌ", "كَأْسٌ", "فَأْسٌ", "تَأَخَّرَ", "يَتَأَخَّرُ", "تَأَمَّلَ", "يَتَأَمَّلُ", "مَأْلُوفٌ", "طُمَأْنِينَةٌ", "تَأَلَّمَ", "يَتَأَلَّمُ", "فَجْأَةٌ", "مَأْذُونٌ", "مَأْخَذٌ", "مَأْكُولٌ", "مَأْوَى", "مَأْمَنٌ", "مَأْمُورٌ", "رَأْفَةٌ", "شَأْنٌ", "نَشْأَةٌ", "تَأَسَّفَ", "يَتَأَسَّفُ", "مَأْدُبَةٌ", "دَأَبَ", "يَزْأَرُ", "زَأَرَ", "فَأْرٌ", "ثَأْرٌ", "يَثْأَرُ", "بَأْسٌ", "مَأْسَاةٌ", "مَأْرَبٌ", "تَأَهَّبَ", "يَتَأَهَّبُ", "تَأَكَّدَ", "يَتَأَكَّدُ", "سَأَمٌ", "يَسْأَمُ", "رَأَى", "مَرْأَى", "تَأْجِيلٌ", "مَأْجُورٌ", "مَأْسُورٌ", "تَأْثِيرٌ", "تَأْمِينٌ", "رَأْيٌ", "تَأْلِيفٌ", "تَأْسِيسٌ", "مَأْثُورٌ", "تَأْرِيخٌ", "يَتَأَثَّرُ"];
+        
+        const wordsWaw = ["مُؤْمِنٌ", "رُؤْيَةٌ", "سُؤَالٌ", "فُؤَادٌ", "لُؤْلُؤَةٌ", "مَسْؤُولٌ", "شُؤُونٌ", "كُؤُوسٌ", "رُؤُوسٌ", "بُؤْسٌ", "يُؤْذِي", "يُؤَجِّلُ", "يُؤَلِّفُ", "يُؤَيِّدُ", "تَفَاؤُلٌ", "تَشَاؤُمٌ", "تَثَاؤُبٌ", "هَؤُلَاءِ", "يَؤُمُّ", "لُؤْمٌ", "مُؤَسَّسَةٌ", "مُؤْتَمَرٌ", "مُؤَشِّرٌ", "مُؤَلِّفٌ", "مُؤَذِّنٌ", "يُؤَاخِذُ", "يُؤْتِي", "مُؤْلِمٌ", "شُؤْمٌ", "دَؤُوبٌ", "رَؤُوفٌ", "مُؤَامَرَةٌ", "مُؤَانَسَةٌ", "مُؤَكَّدٌ", "يُؤَكِّدُ", "مُؤَخَّرٌ", "يُؤَخِّرُ", "مُؤَهِّلٌ", "يُؤَهِّلُ", "مُؤَجَّرٌ", "مَشْؤُومٌ", "مَؤُونَةٌ", "يَؤُولُ", "يُؤْوِي", "مُؤَنَّثٌ", "يُؤْنِسُ", "يُؤَمِّنُ", "تَبَاطُؤُهُ", "تَكَافُؤُهُ", "تَجَرُّؤُهُ", "رُؤَسَاءُ", "رُؤُومٌ", "بُؤْرَةٌ", "تَوَاطُؤُهُ"];
+        
+        const wordsYaa = ["رَئِيسٌ", "كَئِيبٌ", "سَئِمَ", "يَوْمَئِذٍ", "حِينَئِذٍ", "قَائِدٌ", "عَائِلَةٌ", "طَائِرٌ", "صَائِمٌ", "قَائِمٌ", "دَائِمٌ", "نَائِمٌ", "عَائِمٌ", "بَائِعٌ", "رَائِعٌ", "ضَائِعٌ", "جَائِعٌ", "مَائِدَةٌ", "سَائِلٌ", "مَائِلٌ", "خَائِنٌ", "كَائِنٌ", "أَسْئِلَةٌ", "أَفْئِدَةٌ", "رَسَائِلُ", "وَسَائِلُ", "مَسَائِلُ", "عَجَائِبُ", "غَرَائِبُ", "فَضَائِلُ", "شَمَائِلُ", "قَبَائِلُ", "خَصَائِصُ", "نَصَائِحُ", "طَائِفَةٌ", "سُئِلَ", "وُئِدَ", "لَئِيمٌ", "بِئْرٌ", "ذِئْبٌ", "رِئَةٌ", "مِئَةٌ", "فِئَةٌ", "مِئْذَنَةٌ", "سَيِّئَةٌ", "هَادِئَةٌ", "دَافِئَةٌ", "تَهْنِئَةٌ", "تَوْطِئَةٌ", "بِيئَةٌ", "خَطِيئَةٌ", "بَرِيئَةٌ", "مُضِيئَةٌ", "دَنِيئَةٌ", "هَيْئَةٌ", "مُتَّكِئُونَ", "طَارِئَةٌ", "ذَائِقَةٌ", "مُطْمَئِنٌّ", "مَشِيئَةٌ"];
+        
+        const wordsLine = ["قِرَاءَةٌ", "عَبَاءَةٌ", "مُرُوءَةٌ", "بَرَاءَةٌ", "كَفَاءَةٌ", "دَنَاءَةٌ", "تَفَاءَلَ", "تَشَاءَمَ", "تَسَاءَلَ", "تَرَاءَى", "مَقْرُوءَةٌ", "مَوْبُوءَةٌ", "إِسَاءَةٌ", "بَذَاءَةٌ", "مَسَاءَةٌ", "مَوْءُودَةٌ", "مُرُوءَاتٌ", "أَضَاءَتْ", "أَسَاءَتْ", "جَاءَتْ", "شَاءَتْ", "سَاءَتْ", "مُسَاءَلَةٌ", "نَبُوءَةٌ", "بَاءَتْ", "نَاءَتْ", "فَاءَتْ", "تَثَاءَبَ", "سُوءَهَا", "وُضُوءَهَا", "هُدُوءَهَا", "غِذَاءَهَا", "نِدَاءَهَا", "بِنَاءَهَا", "سَمَاءَهَا", "هَوَاءَهَا", "عَنَاءَهَا", "دَوَاءَهَا", "حِذَاءَهَا", "رِدَاءَهَا", "بَهَاءَهَا", "رَجَاءَهَا", "جَفَاءَهَا", "وَفَاءَهَا", "نَقَاءَهَا", "ضِيَاءَهَا", "مَمْلُوءَةٌ", "مَبْدُوءَةٌ", "مُضَاءَةٌ", "اسْتَاءَتْ", "أَفَاءَتْ", "لُجُوءَهَا", "بُكَاءَهَا", "ثَرَاءَهَا", "مَقْرُوءَاتٌ"];
+        
+        const wordsDatabase = [...wordsAlef, ...wordsWaw, ...wordsYaa, ...wordsLine];
+        const autoVocalizationDict = {};
+        
+        wordsDatabase.forEach(word => {
+            let cleanWord = word.replace(/[\u064B-\u065F\u0651]/g, ''); 
+            autoVocalizationDict[cleanWord] = word;
+            
+            let superClean = cleanWord.replace(/[أإآ]/g, 'ا').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي');
+            if (superClean !== cleanWord) {
+                autoVocalizationDict[superClean] = word;
+            }
+        });
+
+        const arabicLettersForms = {
+            'ا': ['ا', 'ـا'], 'أ': ['أ', 'ـأ'], 'إ': ['إ', 'ـإ'], 'آ': ['آ', 'ـآ'],
+            'ب': ['ب', 'بـ', 'ـبـ', 'ـب'], 'ت': ['ت', 'تـ', 'ـتـ', 'ـت'], 'ث': ['ث', 'ثـ', 'ـثـ', 'ـث'],
+            'ج': ['ج', 'جـ', 'ـجـ', 'ـج'], 'ح': ['ح', 'حـ', 'ـحـ', 'ـح'], 'خ': ['خ', 'خـ', 'ـخـ', 'ـخ'],
+            'د': ['د', 'ـد'], 'ذ': ['ذ', 'ـذ'], 'ر': ['ر', 'ـر'], 'ز': ['ز', 'ـز'],
+            'س': ['س', 'سـ', 'ـسـ', 'ـس'], 'ش': ['ش', 'شـ', 'ـشـ', 'ـش'],
+            'ص': ['ص', 'صـ', 'ـصـ', 'ـص'], 'ض': ['ض', 'ضـ', 'ـضـ', 'ـض'],
+            'ط': ['ط', 'طـ', 'ـطـ', 'ـط'], 'ظ': ['ظ', 'ظـ', 'ـظـ', 'ـظ'],
+            'ع': ['ع', 'عـ', 'ـعـ', 'ـع'], 'غ': ['غ', 'غـ', 'ـغـ', 'ـغ'],
+            'ف': ['ف', 'فـ', 'ـفـ', 'ـف'], 'ق': ['ق', 'قـ', 'ـقـ', 'ـق'],
+            'ك': ['ك', 'كـ', 'ـكـ', 'ـك'], 'ل': ['ل', 'لـ', 'ـلـ', 'ـل'],
+            'م': ['م', 'مـ', 'ـمـ', 'ـم'], 'ن': ['ن', 'نـ', 'ـنـ', 'ـن'],
+            'ه': ['ه', 'هـ', 'ـهـ', 'ـه'], 'و': ['و', 'ـو'],
+            'ي': ['ي', 'يـ', 'ـيـ', 'ـي'], 'ى': ['ى', 'ـى'], 'ة': ['ة', 'ـة'],
+            'ء': ['ء', 'أ', 'ـأ', 'ؤ', 'ـؤ', 'ئ', 'ئـ', 'ـئـ', 'ـئ'] 
+        };
+
+        const rightJoining = ['ا', 'أ', 'إ', 'آ', 'د', 'ذ', 'ر', 'ز', 'و', 'ؤ', 'ة', 'ى'];
+        const nonJoining = ['ء'];
+
+        let gameWords = [];
+        let isTeacherReady = false;
+        let currentWordIndex = 0;
+        let studentScore = 0;
+        let expectedShapesArray = [];
+        
+        let selectedChar = null;
+        let selectedElement = null;
+        let currentWordMistakes = 0;
+
+        // ==========================================
+        // وظائف اختيار المولد الآلي للكلمات
+        // ==========================================
+        function selectMethod(method, element) {
+            document.querySelectorAll('.radio-label').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            
+            document.getElementById('selected-method').value = method;
+            
+            const genContainer = document.getElementById('auto-gen-container');
+            const textarea = document.getElementById('teacher-words');
+            const msgBox = document.getElementById('teacher-msg');
+            msgBox.innerText = "";
+            
+            if (method === 'manual') {
+                genContainer.style.display = 'none';
+                textarea.value = '';
+                textarea.placeholder = "أدخل الكلمات هنا... مثال: فأس بئر سؤال مسألة عباءة";
+            } else {
+                genContainer.style.display = 'flex';
+                textarea.value = '';
+                textarea.placeholder = "حدد عدد الكلمات ثم اضغط توليد لتظهر هنا...";
+            }
+        }
+
+        function generateWords() {
+            const method = document.getElementById('selected-method').value;
+            const countInput = document.getElementById('word-count').value;
+            const count = parseInt(countInput);
+            const msgBox = document.getElementById('teacher-msg');
+            const textarea = document.getElementById('teacher-words');
+
+            if (isNaN(count) || count < 3 || count > 50) {
+                msgBox.innerText = "❌ الرجاء إدخال عدد صحيح بين 3 و 50 كلمة.";
+                msgBox.style.color = "#D32F2F";
+                return;
+            }
+            msgBox.innerText = "";
+
+            let sourceArray = [];
+            if (method === 'alef') sourceArray = wordsAlef;
+            else if (method === 'waw') sourceArray = wordsWaw;
+            else if (method === 'yaa') sourceArray = wordsYaa;
+            else if (method === 'line') sourceArray = wordsLine;
+            else if (method === 'mixed') sourceArray = wordsDatabase;
+
+            let shuffled = [...sourceArray].sort(() => 0.5 - Math.random());
+            let selected = shuffled.slice(0, count);
+
+            textarea.value = selected.join(' ');
+        }
+
+        function addFallbackHarakat(word) {
+            let result = "";
+            let chars = word.split('');
+            for(let i = 0; i < chars.length; i++) {
+                let char = chars[i];
+                result += char;
+
+                let isHaraka = /[\u064B-\u065F]/.test(char);
+                let hasNextHaraka = (i < chars.length - 1) && /[\u064B-\u065F]/.test(chars[i+1]);
+
+                if (!isHaraka && !hasNextHaraka) {
+                    if (['ا', 'و', 'ي', 'ى'].includes(char)) { continue; }
+                    if (char === 'ئ') {
+                        if (!result.endsWith('ِئ')) { result += 'ِ'; }
+                    } else if (i < chars.length - 1 && chars[i+1] === 'ئ') {
+                        result += 'ِ';
+                    } else {
+                        result += 'َ'; 
+                    }
+                }
+            }
+            return result;
+        }
+
+        function processTeacherWords() {
+            const textarea = document.getElementById('teacher-words');
+            let cleanText = textarea.value.replace(/[^\u0621-\u064A\u064B-\u065F\s]/g, '');
+            let rawWords = cleanText.trim().split(/\s+/).filter(w => w.length > 0);
+            
+            const msgBox = document.getElementById('teacher-msg');
+            const confirmBox = document.getElementById('teacher-confirmation');
+
+            if (rawWords.length < 3 || rawWords.length > 50) {
+                msgBox.innerText = "❌ تنبيه: يجب إدخال من 3 إلى 50 كلمة.";
+                msgBox.style.color = "#D32F2F";
+                confirmBox.style.display = 'none';
+                return;
+            }
+
+            let vocalizedWords = rawWords.map(word => {
+                let cleanWord = word.replace(/[\u064B-\u065F]/g, ''); 
+                let superClean = cleanWord.replace(/[أإآ]/g, 'ا').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي');
+                
+                let vocalized = autoVocalizationDict[cleanWord] || autoVocalizationDict[superClean] || autoVocalizationDict[word];
+                
+                if (!vocalized) {
+                    if (/[\u064B-\u065F]/.test(word)) vocalized = word;
+                    else vocalized = addFallbackHarakat(word);
+                }
+                return vocalized; 
+            });
+
+            textarea.value = vocalizedWords.join(' ');
+            msgBox.innerText = "";
+            confirmBox.style.display = 'block';
+            isTeacherReady = false;
+        }
+
+        function confirmWords(isCorrect) {
+            const textarea = document.getElementById('teacher-words');
+            const msgBox = document.getElementById('teacher-msg');
+            const confirmBox = document.getElementById('teacher-confirmation');
+            const inputArea = document.getElementById('teacher-input-area');
+            const methodOptions = document.querySelector('.radio-group');
+            const genContainer = document.getElementById('auto-gen-container');
+
+            if (isCorrect) {
+                let cleanText = textarea.value.replace(/[^\u0621-\u064A\u064B-\u065F\s]/g, '');
+                gameWords = cleanText.trim().split(/\s+/).filter(w => w.length > 0);
+                isTeacherReady = true;
+                
+                inputArea.style.display = 'none';
+                confirmBox.style.display = 'none';
+                methodOptions.style.display = 'none';
+                genContainer.style.display = 'none';
+                document.querySelector('.instructions').style.display = 'none';
+                
+                msgBox.innerText = "✅ تم تخزين الكلمات وإخفاؤها بنجاح. اللعبة جاهزة!";
+                msgBox.style.color = "#2E7D32";
+            } else {
+                msgBox.innerText = "قم بوضع الحركات يدوياً أو اختر الكلمات الجاهزة لتفادي الأخطاء.";
+                msgBox.style.color = "#D32F2F";
+                confirmBox.style.display = 'none';
+                textarea.focus();
+            }
+        }
+
+        function startGame() {
+            const name = document.getElementById('student-name').value.trim();
+            const sClass = document.getElementById('student-class').value.trim();
+            const errorBox = document.getElementById('student-error');
+
+            if (!isTeacherReady) {
+                errorBox.innerText = "⚠️ انتظر حتى ينهي المعلم إعداد الكلمات.";
+                return;
+            }
+            if (name === "" || sClass === "") {
+                errorBox.innerText = "⚠️ اكتب اسمك الثلاثي والصف للبدء.";
+                return;
+            }
+
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            document.getElementById('student-info-display').innerText = `الاسم: ${name} | الصف: ${sClass}`;
+            document.getElementById('total-words-num').innerText = gameWords.length;
+            document.getElementById('screen1').style.display = 'none';
+            document.getElementById('screen2').style.display = 'flex';
+            
+            speakText(`أَهْلًا بِكَ يَا بَطَل ${name} فِي الصَّفِ ${sClass}. هَلْ أَنْتَ مُسْتَعِدٌ لِلتَّحَدِّي؟ هَيَّا نَنْطَلِق!`);
+            
+            currentWordIndex = 0;
+            studentScore = 0;
+            updateScoreDisplay();
+            loadWord(currentWordIndex);
+        }
+
+        function extractLettersWithHarakat(word) {
+            const regex = /[\u0621-\u064A][\u064B-\u065F]*/g;
+            return word.match(regex) || [];
+        }
+
+        function getExpectedShapes(word) {
+            let baseWord = word.replace(/[\u064B-\u065F]/g, '');
+            let shapes = [];
+            
+            for (let i = 0; i < baseWord.length; i++) {
+                let char = baseWord[i];
+                let prevChar = i > 0 ? baseWord[i - 1] : null;
+                let nextChar = i < baseWord.length - 1 ? baseWord[i + 1] : null;
+
+                let connectsRight = false;
+                let connectsLeft = false;
+
+                if (prevChar && !rightJoining.includes(prevChar) && !nonJoining.includes(prevChar)) {
+                    if (!nonJoining.includes(char)) connectsRight = true;
+                }
+                if (nextChar && !rightJoining.includes(char) && !nonJoining.includes(char)) {
+                    if (!nonJoining.includes(nextChar)) connectsLeft = true;
+                }
+
+                let shape = char;
+                if (connectsRight && connectsLeft) shape = 'ـ' + char + 'ـ';
+                else if (connectsRight && !connectsLeft) shape = 'ـ' + char;
+                else if (!connectsRight && connectsLeft) shape = char + 'ـ';
+                
+                shapes.push(shape);
+            }
+            return shapes;
+        }
+
+        function showEndScreen() {
+            document.getElementById('screen2').style.display = 'none';
+            document.getElementById('screen3').style.display = 'flex';
+            
+            const name = document.getElementById('student-name').value.trim();
+            document.getElementById('final-message').innerText = `أحسنت صنعاً يا ${name}!\nلقد اجتزت التحدي ببراعة وأثبت أنك بطل في الإملاء.`;
+            document.getElementById('final-score-display').innerText = studentScore;
+            
+            playSound('correct');
+            setTimeout(() => {
+                 speakText(`مُبَارَكٌ يَا ${name}! لَقَدْ أَنْهَيْتَ اللُّعْبَةَ بِنَجَاح، وَحَصَلْتَ عَلَى ${studentScore} نُقْطَة. أَنْتَ بِحَقٍّ بَطَلُ الْهَمَزَات!`);
+            }, 500);
+        }
+
+        function loadWord(index) {
+            const btnSubmit = document.getElementById('btn-submit-answer');
+            if (btnSubmit) btnSubmit.disabled = false;
+
+            if (index >= gameWords.length) {
+                showEndScreen();
+                return;
+            }
+
+            currentWordMistakes = 0;
+
+            document.getElementById('current-word-num').innerText = index + 1;
+
+            let word = gameWords[index];
+            expectedShapesArray = getExpectedShapes(word);
+            
+            const analyzedContainer = document.getElementById('analyzed-word');
+            const lettersBoxes = document.getElementById('letters-boxes');
+            
+            analyzedContainer.innerHTML = '';
+            lettersBoxes.innerHTML = '';
+            clearDropZone();
+            document.getElementById('game-result-msg').innerText = "";
+            selectedChar = null;
+            selectedElement = null;
+
+            let charsWithHarakat = extractLettersWithHarakat(word);
+            let totalLetters = charsWithHarakat.length;
+
+            charsWithHarakat.forEach((charGroup, i) => {
+                let baseLetter = charGroup.charAt(0);
+                let harakat = charGroup.substring(1);
+                
+                let isMiddle = (i > 0 && i < totalLetters - 1);
+                if (isMiddle && ['أ', 'إ', 'ؤ', 'ئ'].includes(baseLetter)) {
+                    baseLetter = 'ء';
+                }
+
+                let span = document.createElement('span');
+                span.innerText = baseLetter + harakat;
+                analyzedContainer.appendChild(span);
+
+                createLetterBox(baseLetter, lettersBoxes, i, totalLetters);
+            });
+        }
+
+        function createLetterBox(baseLetter, container, letterIndex, totalLetters) {
+            let forms = arabicLettersForms[baseLetter] || [baseLetter];
+            let box = document.createElement('div');
+            box.className = 'letter-box';
+
+            let step = totalLetters > 1 ? (55 / (totalLetters - 1)) : 0;
+            let lightness = 95 - (letterIndex * step);
+            let bgColor = `hsl(205, 90%, ${lightness}%)`;
+            let textColor = lightness < 65 ? '#FFFFFF' : '#01579B'; 
+
+            forms.forEach(form => {
+                let letterElement = document.createElement('div');
+                letterElement.className = 'draggable-letter';
+                letterElement.innerText = form;
+                letterElement.draggable = true;
+                
+                letterElement.style.backgroundColor = bgColor;
+                letterElement.style.color = textColor;
+                if (lightness < 65) {
+                    letterElement.style.borderColor = `hsl(205, 90%, ${lightness - 15}%)`;
+                }
+
+                letterElement.ondragstart = drag;
+                letterElement.onclick = function() { 
+                    playSound('lock');
+                    selectLetterForClick(this, form); 
+                };
+
+                box.appendChild(letterElement);
+            });
+
+            container.appendChild(box);
+        }
+
+        function selectLetterForClick(el, char) {
+            document.querySelectorAll('.draggable-letter').forEach(div => div.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedChar = char;
+            selectedElement = el;
+        }
+
+        function appendToDropZone(text) {
+            const dropZone = document.getElementById('drop-zone');
+            let span = document.createElement('span');
+            span.innerText = text;
+            span.onclick = function(e) {
+                playSound('suspense');
+                this.remove();
+                e.stopPropagation(); 
+            };
+            dropZone.appendChild(span);
+            playSound('lock');
+        }
+
+        function placeLetterInZone() {
+            if (selectedChar !== null) {
+                appendToDropZone(selectedChar);
+                selectedElement.classList.remove('selected');
+                selectedChar = null;
+                selectedElement = null;
+            }
+        }
+
+        function allowDrop(ev) { ev.preventDefault(); }
+        
+        function drag(ev) { 
+            ev.dataTransfer.setData("text", ev.target.innerText);
+            if(selectedElement) {
+                selectedElement.classList.remove('selected');
+                selectedChar = null;
+                selectedElement = null;
+            }
+        }
+        
+        function drop(ev) {
+            ev.preventDefault();
+            let data = ev.dataTransfer.getData("text");
+            if(data) {
+                appendToDropZone(data);
+            }
+        }
+
+        function clearDropZone() {
+            document.getElementById('drop-zone').innerHTML = '';
+            document.getElementById('game-result-msg').innerText = '';
+        }
+
+        function checkAnswer() {
+            const dropZone = document.getElementById('drop-zone');
+            const resultMsg = document.getElementById('game-result-msg');
+            const children = dropZone.children;
+            
+            if(children.length === 0) return;
+
+            let studentShapes = [];
+            for (let i = 0; i < children.length; i++) {
+                studentShapes.push(children[i].innerText.trim());
+            }
+
+            let isCorrect = true;
+            if (studentShapes.length !== expectedShapesArray.length) {
+                isCorrect = false;
+            } else {
+                for (let i = 0; i < studentShapes.length; i++) {
+                    if (studentShapes[i] !== expectedShapesArray[i]) {
+                        isCorrect = false;
+                        break;
+                    }
+                }
+            }
+
+            if (isCorrect) {
+                playSound('correct');
+                
+                if (currentWordMistakes === 0) {
+                    resultMsg.innerText = "⭐ إجابة رائعة! 10 نقاط ⭐";
+                    studentScore += 10;
+                } else {
+                    resultMsg.innerText = "⭐ إجابة صحيحة! (أحسنت التصحيح) ⭐";
+                }
+                
+                resultMsg.style.color = "#2E7D32";
+                updateScoreDisplay();
+                
+                document.getElementById('btn-submit-answer').disabled = true;
+
+                setTimeout(() => {
+                    currentWordIndex++;
+                    loadWord(currentWordIndex);
+                }, 2000);
+            } else {
+                playSound('wrong');
+                currentWordMistakes++; 
+                resultMsg.innerText = "❌ إجابة خاطئة.. أعد الترتيب واختيار الأشكال بشكل صحيح.";
+                resultMsg.style.color = "#D32F2F";
+            }
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('score-display').innerText = studentScore;
+        }
+
+    </script>
+</body>
+</html>
